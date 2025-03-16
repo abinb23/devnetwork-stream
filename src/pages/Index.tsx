@@ -5,6 +5,7 @@ import ProfileSidebar from '@/components/ProfileSidebar';
 import CreatePost from '@/components/CreatePost';
 import Post from '@/components/Post';
 import SuggestedUsers from '@/components/SuggestedUsers';
+import AIChatBubble from '@/components/AIChatBubble';
 import { feedPosts } from '@/utils/mockData';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { ArrowUp } from 'lucide-react';
@@ -86,12 +87,15 @@ const Index = () => {
       {/* Scroll to top button */}
       <button 
         onClick={scrollToTop}
-        className={`fixed bottom-6 right-6 p-4 rounded-full bg-brand-500 text-white shadow-md transition-all duration-300 transform ${
+        className={`fixed bottom-6 left-6 p-4 rounded-full bg-brand-500 text-white shadow-md transition-all duration-300 transform ${
           showScrollTop ? 'translate-y-0 opacity-100' : 'translate-y-20 opacity-0'
         }`}
       >
         <ArrowUp size={20} />
       </button>
+      
+      {/* AI Chat Bubble */}
+      <AIChatBubble />
     </div>
   );
 };
