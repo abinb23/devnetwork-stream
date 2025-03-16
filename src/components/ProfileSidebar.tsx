@@ -1,10 +1,9 @@
-
 import React from 'react';
 import { cn } from '@/lib/utils';
 import { currentUser } from '@/utils/mockData';
 import ProgressCircle from '@/components/ui/ProgressCircle';
 import { useScrollReveal } from '@/hooks/useScrollReveal';
-import { Backpack, BookOpen, Bookmark, ChevronRight, Graduation, MessageSquare, User, Users } from 'lucide-react';
+import { Backpack, BookOpen, Bookmark, ChevronRight, GraduationCap, MessageSquare, User, Users } from 'lucide-react';
 
 interface ProfileSidebarProps {
   className?: string;
@@ -164,7 +163,7 @@ const ProfileSidebar: React.FC<ProfileSidebarProps> = ({ className, isMobile = f
             <span className="text-sm">Connections</span>
           </a>
           <a href="/credentials" className="sidebar-link">
-            <Graduation size={16} />
+            <GraduationCap size={16} />
             <span className="text-sm">Credentials</span>
           </a>
         </nav>
