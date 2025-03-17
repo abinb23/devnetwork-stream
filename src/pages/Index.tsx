@@ -6,13 +6,14 @@ import CreatePost from '@/components/CreatePost';
 import Post from '@/components/Post';
 import SuggestedUsers from '@/components/SuggestedUsers';
 import AIChatBubble from '@/components/AIChatBubble';
-import { feedPosts } from '@/utils/mockData';
+import { feedPosts, currentUser } from '@/utils/mockData';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { ArrowUp } from 'lucide-react';
 
 const Index = () => {
   const isMobile = useIsMobile();
   const [showScrollTop, setShowScrollTop] = useState(false);
+  const [posts, setPosts] = useState(feedPosts);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -28,6 +29,10 @@ const Index = () => {
       top: 0,
       behavior: 'smooth',
     });
+  };
+
+  const handlePostCreated = (newPost: any) => {
+    setPosts(prevPosts => [newPost, ...prevPosts]);
   };
 
   return (
@@ -54,10 +59,13 @@ const Index = () => {
           
           {/* Feed */}
           <div className="flex-1 max-w-3xl mx-auto">
-            <CreatePost className="mb-6" />
+            <CreatePost 
+              className="mb-6" 
+              onPostCreated={handlePostCreated}
+            />
             
             <div className="space-y-6">
-              {feedPosts.map((post) => (
+              {posts.map((post) => (
                 <Post 
                   key={post.id}
                   {...post}

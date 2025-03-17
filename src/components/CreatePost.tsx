@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { cn } from '@/lib/utils';
 import { Image, Link, FileText, Send, X } from 'lucide-react';
 import { currentUser } from '@/utils/mockData';
@@ -7,13 +7,15 @@ import { toast } from '@/hooks/use-toast';
 
 interface CreatePostProps {
   className?: string;
+  onPostCreated?: (post: any) => void;
 }
 
-const CreatePost: React.FC<CreatePostProps> = ({ className }) => {
+const CreatePost: React.FC<CreatePostProps> = ({ className, onPostCreated }) => {
   const [postContent, setPostContent] = useState('');
   const [isExpanded, setIsExpanded] = useState(false);
   const [attachments, setAttachments] = useState<{ type: 'image' | 'document', name: string, preview?: string }[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleContentChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     setPostContent(e.target.value);
@@ -23,15 +25,31 @@ const CreatePost: React.FC<CreatePostProps> = ({ className }) => {
   };
 
   const handleImageAttachment = () => {
-    // Mock file selection
-    const mockImage = {
-      type: 'image' as const,
-      name: 'example-image.jpg',
-      preview: 'https://images.unsplash.com/photo-1661956602116-aa6865609028?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80'
+    if (fileInputRef.current) {
+      fileInputRef.current.click();
+    }
+  };
+
+  const handleFileSelected = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+
+    const file = files[0];
+    const isImage = file.type.startsWith('image/');
+    
+    const fileObj = {
+      type: isImage ? 'image' as const : 'document' as const,
+      name: file.name,
+      preview: isImage ? URL.createObjectURL(file) : undefined
     };
     
-    setAttachments([...attachments, mockImage]);
+    setAttachments([...attachments, fileObj]);
     setIsExpanded(true);
+    
+    // Reset the input so the same file can be selected again
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
   };
 
   const handleDocumentAttachment = () => {
@@ -47,6 +65,12 @@ const CreatePost: React.FC<CreatePostProps> = ({ className }) => {
 
   const removeAttachment = (index: number) => {
     const newAttachments = [...attachments];
+    
+    // Revoke object URL to prevent memory leaks
+    if (newAttachments[index].preview) {
+      URL.revokeObjectURL(newAttachments[index].preview!);
+    }
+    
     newAttachments.splice(index, 1);
     setAttachments(newAttachments);
   };
@@ -56,17 +80,42 @@ const CreatePost: React.FC<CreatePostProps> = ({ className }) => {
     
     setIsSubmitting(true);
     
-    // Mock API call
-    setTimeout(() => {
-      setPostContent('');
-      setAttachments([]);
-      setIsExpanded(false);
-      setIsSubmitting(false);
-      toast({
-        title: "Post created",
-        description: "Your post has been successfully created.",
-      });
-    }, 1000);
+    // Create new post object
+    const newPost = {
+      id: Date.now(),
+      author: currentUser,
+      timestamp: 'Just now',
+      content: postContent,
+      image: attachments.find(a => a.type === 'image')?.preview,
+      likes: 0,
+      comments: 0,
+      shares: 0,
+      liked: false,
+    };
+    
+    // Call the callback to add the post to the feed
+    if (onPostCreated) {
+      onPostCreated(newPost);
+    }
+    
+    // Reset the form
+    setPostContent('');
+    
+    // Revoke all object URLs before clearing attachments
+    attachments.forEach(attachment => {
+      if (attachment.preview) {
+        URL.revokeObjectURL(attachment.preview);
+      }
+    });
+    
+    setAttachments([]);
+    setIsExpanded(false);
+    setIsSubmitting(false);
+    
+    toast({
+      title: "Post created",
+      description: "Your post has been successfully created.",
+    });
   };
 
   return (
@@ -121,6 +170,15 @@ const CreatePost: React.FC<CreatePostProps> = ({ className }) => {
               ))}
             </div>
           )}
+          
+          {/* Hidden file input */}
+          <input
+            type="file"
+            ref={fileInputRef}
+            onChange={handleFileSelected}
+            accept="image/*"
+            className="hidden"
+          />
           
           {isExpanded && (
             <div className="mt-3 flex items-center justify-between">
