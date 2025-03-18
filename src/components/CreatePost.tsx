@@ -14,7 +14,7 @@ interface CreatePostProps {
 const CreatePost: React.FC<CreatePostProps> = ({ className, onPostCreated }) => {
   const [postContent, setPostContent] = useState('');
   const [isExpanded, setIsExpanded] = useState(false);
-  const [attachments, setAttachments] = useState<{ type: 'image' | 'document', name: string, preview?: string }[]>([]);
+  const [attachments, setAttachments] = useState<{ type: 'image' | 'document', name: string, preview?: string, file?: File }[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -44,7 +44,8 @@ const CreatePost: React.FC<CreatePostProps> = ({ className, onPostCreated }) => 
     const fileObj = {
       type: isImage ? 'image' as const : 'document' as const,
       name: file.name,
-      preview: previewUrl
+      preview: previewUrl,
+      file: file  // Store the actual file for later use
     };
     
     setAttachments([...attachments, fileObj]);
@@ -84,8 +85,19 @@ const CreatePost: React.FC<CreatePostProps> = ({ className, onPostCreated }) => 
     
     setIsSubmitting(true);
     
-    // Get the image preview from the first image attachment (if any)
-    const imagePreview = attachments.find(a => a.type === 'image')?.preview;
+    // Generate a data URL from the first image file if it exists
+    let imageDataUrl: string | undefined = undefined;
+    
+    const imageAttachment = attachments.find(a => a.type === 'image' && a.file);
+    if (imageAttachment?.file) {
+      imageDataUrl = await new Promise((resolve) => {
+        const reader = new FileReader();
+        reader.onloadend = () => resolve(reader.result as string);
+        reader.readAsDataURL(imageAttachment.file!);
+      });
+    }
+    
+    console.log("Creating post with image data URL:", imageDataUrl ? "Image data URL present" : "No image");
     
     // Create new post object
     const postId = Date.now().toString();
@@ -94,7 +106,7 @@ const CreatePost: React.FC<CreatePostProps> = ({ className, onPostCreated }) => 
       author: currentUser,
       timestamp: 'Just now',
       content: postContent,
-      image: imagePreview, // Ensure image URL is included
+      image: imageDataUrl, // Use data URL instead of blob URL
       likes: 0,
       comments: 0,
       shares: 0,
@@ -106,8 +118,6 @@ const CreatePost: React.FC<CreatePostProps> = ({ className, onPostCreated }) => 
     const attachmentUrls = attachments
       .filter(att => att.preview)
       .map(att => att.preview as string);
-    
-    console.log("Sending post with image:", imagePreview);
     
     // Send post for moderation
     await sendPostForModeration(

@@ -33,6 +33,9 @@ const Index = () => {
   };
 
   const handlePostCreated = (newPost: any) => {
+    console.log("New post created:", newPost);
+    console.log("Post has image:", newPost.image ? "Yes" : "No");
+    
     setPosts(prevPosts => [newPost, ...prevPosts]);
     
     // If the post is pending moderation, show a notification

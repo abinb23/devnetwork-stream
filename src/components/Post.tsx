@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { cn } from '@/lib/utils';
 import { Heart, MessageCircle, Share2, MoreHorizontal, Bookmark, AlertTriangle } from 'lucide-react';
@@ -44,6 +45,8 @@ const Post: React.FC<PostProps> = ({
   const [saved, setSaved] = useState(false);
   const [isModerated, setIsModerated] = useState(!pending_moderation);
   const [isVisible, setIsVisible] = useState(true);
+  const [imageLoaded, setImageLoaded] = useState(false);
+  const [imageError, setImageError] = useState(false);
   
   const postRef = useScrollReveal<HTMLDivElement>({
     threshold: 0.1,
@@ -80,6 +83,15 @@ const Post: React.FC<PostProps> = ({
     }
   }, [id, pending_moderation]);
 
+  // Log image data for debugging
+  useEffect(() => {
+    if (image) {
+      console.log(`Post ${id} has image: ${image.substring(0, 30)}...`);
+    } else {
+      console.log(`Post ${id} has no image`);
+    }
+  }, [id, image]);
+
   const toggleLike = () => {
     if (liked) {
       setLikesCount(likesCount - 1);
@@ -91,6 +103,16 @@ const Post: React.FC<PostProps> = ({
 
   const toggleSave = () => {
     setSaved(!saved);
+  };
+
+  const handleImageLoad = () => {
+    console.log(`Image loaded successfully for post ${id}`);
+    setImageLoaded(true);
+  };
+
+  const handleImageError = () => {
+    console.error(`Error loading image for post ${id}:`, image);
+    setImageError(true);
   };
 
   if (!isVisible) {
@@ -133,17 +155,15 @@ const Post: React.FC<PostProps> = ({
       <div className="mt-3">
         <p className="text-sm leading-relaxed">{content}</p>
         
-        {image && (
+        {image && !imageError && (
           <div className="mt-3 rounded-lg overflow-hidden bg-secondary/50">
             <img 
               src={image} 
               alt="Post attachment"
               className="w-full h-auto max-h-[500px] object-cover"
               loading="lazy"
-              onError={(e) => {
-                console.error("Error loading image:", image);
-                (e.target as HTMLImageElement).style.display = 'none';
-              }}
+              onLoad={handleImageLoad}
+              onError={handleImageError}
             />
           </div>
         )}
