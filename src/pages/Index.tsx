@@ -9,6 +9,7 @@ import AIChatBubble from '@/components/AIChatBubble';
 import { feedPosts, currentUser } from '@/utils/mockData';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { ArrowUp } from 'lucide-react';
+import { toast } from '@/hooks/use-toast';
 
 const Index = () => {
   const isMobile = useIsMobile();
@@ -33,6 +34,19 @@ const Index = () => {
 
   const handlePostCreated = (newPost: any) => {
     setPosts(prevPosts => [newPost, ...prevPosts]);
+    
+    // If the post is pending moderation, show a notification
+    if (newPost.pending_moderation) {
+      toast({
+        title: "Post moderation",
+        description: "Your post will be visible after review. This may take a few minutes.",
+      });
+    }
+  };
+
+  // Remove posts that fail moderation
+  const handlePostRemoved = (postId: string | number) => {
+    setPosts(prevPosts => prevPosts.filter(post => post.id !== postId));
   };
 
   return (

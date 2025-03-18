@@ -1,9 +1,10 @@
 
-import React, { useState } from 'react';
-import { formatDistanceToNow } from 'date-fns';
+import React, { useState, useEffect } from 'react';
 import { cn } from '@/lib/utils';
-import { Heart, MessageCircle, Share2, MoreHorizontal, Bookmark } from 'lucide-react';
+import { Heart, MessageCircle, Share2, MoreHorizontal, Bookmark, AlertTriangle } from 'lucide-react';
 import { useScrollReveal } from '@/hooks/useScrollReveal';
+import { checkModerationResults } from '@/services/moderationService';
+import { toast } from '@/hooks/use-toast';
 
 interface Author {
   id: number;
@@ -13,7 +14,7 @@ interface Author {
 }
 
 interface PostProps {
-  id: number;
+  id: number | string;
   author: Author;
   timestamp: string;
   content: string;
@@ -23,6 +24,7 @@ interface PostProps {
   shares: number;
   liked: boolean;
   className?: string;
+  pending_moderation?: boolean;
 }
 
 const Post: React.FC<PostProps> = ({
@@ -36,15 +38,48 @@ const Post: React.FC<PostProps> = ({
   shares,
   liked: initialLiked,
   className,
+  pending_moderation = false,
 }) => {
   const [liked, setLiked] = useState(initialLiked);
   const [likesCount, setLikesCount] = useState(likes);
   const [saved, setSaved] = useState(false);
+  const [isModerated, setIsModerated] = useState(!pending_moderation);
+  const [isVisible, setIsVisible] = useState(true);
   
   const postRef = useScrollReveal<HTMLDivElement>({
     threshold: 0.1,
     delay: 100,
   });
+
+  // Check moderation status periodically if post is pending moderation
+  useEffect(() => {
+    if (pending_moderation) {
+      const checkInterval = setInterval(async () => {
+        const result = await checkModerationResults(id.toString());
+        
+        if (result) {
+          clearInterval(checkInterval);
+          setIsModerated(true);
+          
+          // If the post should be deleted based on moderation
+          if (result.should_delete) {
+            toast({
+              title: "Post removed",
+              description: "This post has been removed due to policy violations.",
+              variant: "destructive"
+            });
+            
+            // Hide the post after a short delay
+            setTimeout(() => {
+              setIsVisible(false);
+            }, 3000);
+          }
+        }
+      }, 5000); // Check every 5 seconds
+      
+      return () => clearInterval(checkInterval);
+    }
+  }, [id, pending_moderation]);
 
   const toggleLike = () => {
     if (liked) {
@@ -59,11 +94,25 @@ const Post: React.FC<PostProps> = ({
     setSaved(!saved);
   };
 
+  if (!isVisible) {
+    return null;
+  }
+
   return (
     <div 
       ref={postRef}
-      className={cn("post-card", className)}
+      className={cn("post-card relative", className, {
+        "opacity-80": pending_moderation && !isModerated
+      })}
     >
+      {/* Moderation badge */}
+      {pending_moderation && !isModerated && (
+        <div className="absolute top-2 right-2 bg-amber-100 text-amber-800 text-xs px-2 py-1 rounded-full flex items-center">
+          <AlertTriangle size={12} className="mr-1" />
+          <span>Under review</span>
+        </div>
+      )}
+      
       <div className="flex justify-between items-start">
         <div className="flex items-start space-x-3">
           <img 

@@ -4,6 +4,7 @@ import { cn } from '@/lib/utils';
 import { Image, Link, FileText, Send, X } from 'lucide-react';
 import { currentUser } from '@/utils/mockData';
 import { toast } from '@/hooks/use-toast';
+import { sendPostForModeration } from '@/services/moderationService';
 
 interface CreatePostProps {
   className?: string;
@@ -75,14 +76,15 @@ const CreatePost: React.FC<CreatePostProps> = ({ className, onPostCreated }) => 
     setAttachments(newAttachments);
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!postContent.trim() && attachments.length === 0) return;
     
     setIsSubmitting(true);
     
     // Create new post object
+    const postId = Date.now().toString();
     const newPost = {
-      id: Date.now(),
+      id: postId,
       author: currentUser,
       timestamp: 'Just now',
       content: postContent,
@@ -91,7 +93,20 @@ const CreatePost: React.FC<CreatePostProps> = ({ className, onPostCreated }) => 
       comments: 0,
       shares: 0,
       liked: false,
+      pending_moderation: true // Add moderation flag
     };
+    
+    // Prepare attachments for moderation
+    const attachmentUrls = attachments
+      .filter(att => att.preview)
+      .map(att => att.preview as string);
+    
+    // Send post for moderation
+    await sendPostForModeration(
+      postId, 
+      postContent,
+      attachmentUrls
+    );
     
     // Call the callback to add the post to the feed
     if (onPostCreated) {
@@ -114,7 +129,7 @@ const CreatePost: React.FC<CreatePostProps> = ({ className, onPostCreated }) => 
     
     toast({
       title: "Post created",
-      description: "Your post has been successfully created.",
+      description: "Your post is being reviewed and will appear in the feed shortly.",
     });
   };
 
