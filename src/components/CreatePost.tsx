@@ -38,10 +38,13 @@ const CreatePost: React.FC<CreatePostProps> = ({ className, onPostCreated }) => 
     const file = files[0];
     const isImage = file.type.startsWith('image/');
     
+    // Create a blob URL for the image preview
+    const previewUrl = isImage ? URL.createObjectURL(file) : undefined;
+    
     const fileObj = {
       type: isImage ? 'image' as const : 'document' as const,
       name: file.name,
-      preview: isImage ? URL.createObjectURL(file) : undefined
+      preview: previewUrl
     };
     
     setAttachments([...attachments, fileObj]);
@@ -81,6 +84,9 @@ const CreatePost: React.FC<CreatePostProps> = ({ className, onPostCreated }) => 
     
     setIsSubmitting(true);
     
+    // Get the image preview from the first image attachment (if any)
+    const imagePreview = attachments.find(a => a.type === 'image')?.preview;
+    
     // Create new post object
     const postId = Date.now().toString();
     const newPost = {
@@ -88,18 +94,20 @@ const CreatePost: React.FC<CreatePostProps> = ({ className, onPostCreated }) => 
       author: currentUser,
       timestamp: 'Just now',
       content: postContent,
-      image: attachments.find(a => a.type === 'image')?.preview,
+      image: imagePreview, // Ensure image URL is included
       likes: 0,
       comments: 0,
       shares: 0,
       liked: false,
-      pending_moderation: true // Add moderation flag
+      pending_moderation: true
     };
     
     // Prepare attachments for moderation
     const attachmentUrls = attachments
       .filter(att => att.preview)
       .map(att => att.preview as string);
+    
+    console.log("Sending post with image:", imagePreview);
     
     // Send post for moderation
     await sendPostForModeration(

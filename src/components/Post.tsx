@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { cn } from '@/lib/utils';
 import { Heart, MessageCircle, Share2, MoreHorizontal, Bookmark, AlertTriangle } from 'lucide-react';
@@ -139,8 +138,12 @@ const Post: React.FC<PostProps> = ({
             <img 
               src={image} 
               alt="Post attachment"
-              className="w-full h-auto object-cover"
+              className="w-full h-auto max-h-[500px] object-cover"
               loading="lazy"
+              onError={(e) => {
+                console.error("Error loading image:", image);
+                (e.target as HTMLImageElement).style.display = 'none';
+              }}
             />
           </div>
         )}
