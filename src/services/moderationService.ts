@@ -3,6 +3,17 @@
  * Service to handle content moderation API calls
  */
 
+// Define the moderation result interface
+export interface ModerationResult {
+  post_id: string;
+  toxicity_score: number;
+  threat_level_score: number;
+  non_educational_score: number;
+  description: string;
+  message: string;
+  should_delete: boolean;
+}
+
 // Function to send post content for moderation
 export const sendPostForModeration = async (postId: string, content: string, attachments: string[] = []) => {
   try {
@@ -40,7 +51,7 @@ export const sendPostForModeration = async (postId: string, content: string, att
 };
 
 // Function to check moderation results
-export const checkModerationResults = async (postId: string) => {
+export const checkModerationResults = async (postId: string): Promise<ModerationResult | null> => {
   try {
     // In a real environment, this would query your Python backend
     // For now, we'll simulate by checking localStorage

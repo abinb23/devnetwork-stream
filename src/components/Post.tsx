@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { cn } from '@/lib/utils';
 import { Heart, MessageCircle, Share2, MoreHorizontal, Bookmark, AlertTriangle } from 'lucide-react';
 import { useScrollReveal } from '@/hooks/useScrollReveal';
-import { checkModerationResults } from '@/services/moderationService';
+import { checkModerationResults, ModerationResult } from '@/services/moderationService';
 import { toast } from '@/hooks/use-toast';
 
 interface Author {
